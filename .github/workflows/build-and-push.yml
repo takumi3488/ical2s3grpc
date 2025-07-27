@@ -2,7 +2,7 @@ name: Release
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ical2s3grpc
+  IMAGE_NAME: ${{ github.repository }}
 
 on:
   push:

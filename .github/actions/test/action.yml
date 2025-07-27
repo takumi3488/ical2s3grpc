@@ -1,0 +1,26 @@
+name: Test F# Project
+description: Run tests for the F# project
+
+runs:
+  using: composite
+  steps:
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '9.0.x'
+    
+    - name: Restore dependencies
+      run: dotnet restore
+      shell: bash
+    
+    - name: Build
+      run: dotnet build --no-restore
+      shell: bash
+
+    - name: Check format
+      run: dotnet format ical2s3grpc.sln --verify-no-changes --verbosity diagnostic
+      shell: bash
+    
+    - name: Test
+      run: dotnet test --no-build --verbosity normal
+      shell: bash

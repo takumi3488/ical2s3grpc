@@ -1,0 +1,14 @@
+bin/
+obj/
+*.sln
+.git/
+.gitignore
+.vs/
+.vscode/
+*.user
+*.suo
+*.userprefs
+*.DS_Store
+README.md
+compose.yml
+Taskfile.yml

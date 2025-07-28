@@ -55,6 +55,32 @@ This structure follows standard .NET conventions with a focus on simplicity and 
 
 Run `dotnet run` to start the project.
 
+## TODO
+
+### Missing Components
+- [ ] **Models/EventDto.cs** - DTO for mapping between proto and iCal.NET (currently not implemented, service directly maps from proto to iCal.NET)
+- [ ] **Services/CalendarGenerator.cs** - iCal.NET wrapper for calendar generation (currently logic is embedded in ICalendarService.cs)
+- [ ] **S3 Integration in SaveEvents** - The S3 upload functionality is not implemented (see TODO comment at line 218 in ICalendarService.cs)
+- [ ] **Dependency Injection** - IStorageService is not injected into ICalendarService
+- [ ] **Unit Tests** - No test project or unit tests implemented
+- [ ] **Integration Tests** - No integration tests for S3 functionality
+- [ ] **Error Handling** - More robust error handling for S3 operations
+- [ ] **Logging** - Structured logging for S3 operations
+- [ ] **Health Checks** - gRPC health check service implementation
+- [ ] **Docker Support** - Complete Dockerfile implementation and docker-compose configuration
+
+### Implementation Tasks
+- [ ] Inject IStorageService into ICalendarService constructor
+- [ ] Implement S3 upload in SaveEvents method (replace TODO at line 218)
+- [ ] Create CalendarGenerator service to separate iCal.NET logic from gRPC service
+- [ ] Add EventDto model for cleaner separation of concerns
+- [ ] Add comprehensive error handling for S3 operations
+- [ ] Implement retry logic for S3 operations
+- [ ] Add configuration validation at startup
+- [ ] Create unit test project with tests for CalendarGenerator
+- [ ] Create integration test project with tests for S3 operations
+- [ ] Add GitHub Actions CI/CD pipeline
+
 ## gRPC Endpoints
 
 The service exposes the following gRPC endpoints:

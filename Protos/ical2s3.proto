@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+option csharp_namespace = "ical2s3grpc";
+
+package ical2s3;
+
+service ICalendarService {
+  rpc SaveEvents (EventsRequest) returns (SaveEventsResponse);
+}
+
+message EventsRequest {
+  string calendar_id = 1;
+  repeated Event events = 2;
+}
+
+message Event {
+  string event_id = 1;
+  string title = 2;
+  string description = 3;
+  string start_time = 4;
+  string end_time = 5;
+  string location = 6;
+  repeated string attendees = 7;
+  string organizer = 8;
+  string timezone = 9;
+  map<string, string> custom_properties = 10;
+}
+
+message SaveEventsResponse {
+  bool success = 1;
+  string error_message = 2;
+}

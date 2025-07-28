@@ -14,32 +14,33 @@ The project follows a hybrid language approach:
 
 ```
 ical2s3grpc/
-├── Program.cs                     # C# - Application entry point and DI configuration
-├── Protos/                        # Protocol buffer definitions
-│   └── ical2s3.proto              # gRPC service contract
-├── Services/                      # C# - gRPC service implementations
-│   └── ICalendarService.cs        # Main gRPC service
-├── Infrastructure/                # C# - External dependencies and I/O
+├── Program.cs                         # C# - Application entry point and DI configuration
+├── Protos/                            # Protocol buffer definitions
+│   └── ical2s3.proto                  # gRPC service contract
+├── Services/                          # C# - gRPC service implementations
+│   └── ICalendarService.cs            # Main gRPC service
+├── Infrastructure/                    # C# - External dependencies and I/O
 │   ├── S3/
-│   │   └── S3StorageService.cs    # S3 client wrapper
+│   │   └── S3StorageService.cs        # S3 client wrapper
 │   └── Configuration/
-│       └── S3Options.cs           # Configuration models
-├── Core/                          # F# - Pure functional core
-│   ├── Domain/
-│   │   ├── ValueObjects/          # Value objects for type safety
-│   │   │   ├── CalendarId.fs      # Calendar identifier
-│   │   │   ├── EventId.fs         # Event identifier
-│   │   │   ├── EmailAddress.fs    # Email address validation
-│   │   │   ├── TimeZone.fs        # Timezone wrapper
-│   │   │   └── DateTimeRange.fs   # Event time range
-│   │   └── Entities/              # Domain entities
-│   │       ├── Event.fs           # Event domain models
-│   │       └── Calendar.fs        # Calendar domain models
-│   ├── Services/
-│   │   ├── EventProcessor.fs      # Event processing logic
-│   │   └── ICalendarGenerator.fs  # iCalendar format generation
-│   └── Mappers/
-│       └── EventMapper.fs         # Data transformation functions
+│       └── S3Options.cs               # Configuration models
+├── Core/                              # F# - Pure functional core
+│   ├── Domain/                        # Domain layer (pure domain logic)
+│   │   ├── ValueObjects/              # Value objects for type safety
+│   │   │   ├── CalendarId.fs          # Calendar identifier
+│   │   │   ├── EventId.fs             # Event identifier
+│   │   │   ├── EmailAddress.fs        # Email address validation
+│   │   │   ├── TimeZone.fs            # Timezone wrapper
+│   │   │   └── DateTimeRange.fs       # Event time range
+│   │   └── Entities/                  # Domain entities
+│   │       ├── Event.fs               # Event domain models
+│   │       └── Calendar.fs            # Calendar domain models
+│   └── Application/                   # Application layer
+│       ├── Translators/               # Data transformation functions
+│       │   ├── EventTranslator.fs     # Protobuf ⇔ Domain model conversion
+│       │   └── ICalendarTranslator.fs # Domain → iCalendar format conversion
+│       └── Services/
+│           └── EventProcessor.fs      # Event processing logic
 ├── Properties/
 │   └── launchSettings.json
 ├── appsettings.json
@@ -48,7 +49,9 @@ ical2s3grpc/
 └── ical2s3grpc.sln
 ```
 
-This structure follows .NET conventions while maintaining clear separation between imperative I/O operations (C#) and pure functional business logic (F#). The domain layer is organized with value objects for type safety and entities for core business objects.
+This structure follows Domain-Driven Design (DDD) principles and .NET conventions while maintaining clear separation between imperative I/O operations (C#) and pure functional business logic (F#). The F# core is organized into:
+- **Domain layer**: Contains pure domain logic with value objects for type safety and entities for core business objects
+- **Application layer**: Houses translators for data transformation between external formats and domain models, along with application services
 
 ## Development
 

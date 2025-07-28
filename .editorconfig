@@ -14,12 +14,3 @@ trim_trailing_whitespace = true
 [*.cs]
 indent_style = space
 indent_size = 4
-
-# F# files
-[*.{fs,fsi,fsx,fsproj}]
-indent_style = space
-indent_size = 4
-
-# Exclude F# projects from dotnet format
-[*.fsproj]
-generated_code = true

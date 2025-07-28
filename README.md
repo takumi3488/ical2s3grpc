@@ -6,41 +6,30 @@ This project is currently under development and is not yet complete.
 
 ## Architecture
 
-The project follows a hybrid language approach:
-- **C#**: Used for external interfaces and side effects (gRPC services, S3 operations, I/O)
-- **F#**: Used for pure functional core logic (event processing, iCalendar generation, data transformations)
+The project uses a simple, pragmatic C# architecture:
+- **C#**: Used for gRPC services, iCalendar generation (via [iCal.NET](https://github.com/ical-org/ical.net)), and S3 operations
+- **iCal.NET**: Industry-standard library for generating RFC 5545 compliant iCalendar files
+- **AWS SDK**: For S3 bucket operations
 
 ## Directory Structure
 
 ```
 ical2s3grpc/
-├── Program.cs                         # C# - Application entry point and DI configuration
+├── Program.cs                         # Application entry point and DI configuration
 ├── Protos/                            # Protocol buffer definitions
 │   └── ical2s3.proto                  # gRPC service contract
-├── Services/                          # C# - gRPC service implementations
-│   └── ICalendarService.cs            # Main gRPC service
-├── Infrastructure/                    # C# - External dependencies and I/O
-│   ├── S3/
-│   │   └── S3StorageService.cs        # S3 client wrapper
+├── Services/                          # gRPC service implementations
+│   ├── ICalendarService.cs            # Main gRPC service
+│   └── CalendarGenerator.cs           # iCal.NET wrapper for calendar generation
+├── Infrastructure/                    # External dependencies and I/O
+│   ├── Storage/
+│   │   ├── IStorageService.cs         # Storage abstraction
+│   │   ├── S3StorageService.cs        # S3 client implementation
+│   │   └── MockStorageService.cs      # Mock storage for testing
 │   └── Configuration/
 │       └── S3Options.cs               # Configuration models
-├── Core/                              # F# - Pure functional core
-│   ├── Domain/                        # Domain layer (pure domain logic)
-│   │   ├── ValueObjects/              # Value objects for type safety
-│   │   │   ├── CalendarId.fs          # Calendar identifier
-│   │   │   ├── EventId.fs             # Event identifier
-│   │   │   ├── EmailAddress.fs        # Email address validation
-│   │   │   ├── TimeZone.fs            # Timezone wrapper
-│   │   │   └── DateTimeRange.fs       # Event time range
-│   │   └── Entities/                  # Domain entities
-│   │       ├── Event.fs               # Event domain models
-│   │       └── Calendar.fs            # Calendar domain models
-│   └── Application/                   # Application layer
-│       ├── Translators/               # Data transformation functions
-│       │   ├── EventTranslator.fs     # Protobuf ⇔ Domain model conversion
-│       │   └── ICalendarTranslator.fs # Domain → iCalendar format conversion
-│       └── Services/
-│           └── EventProcessor.fs      # Event processing logic
+├── Models/                            # Simple data models
+│   └── EventDto.cs                    # DTO for mapping between proto and iCal.NET
 ├── Properties/
 │   └── launchSettings.json
 ├── appsettings.json
@@ -49,9 +38,18 @@ ical2s3grpc/
 └── ical2s3grpc.sln
 ```
 
-This structure follows Domain-Driven Design (DDD) principles and .NET conventions while maintaining clear separation between imperative I/O operations (C#) and pure functional business logic (F#). The F# core is organized into:
-- **Domain layer**: Contains pure domain logic with value objects for type safety and entities for core business objects
-- **Application layer**: Houses translators for data transformation between external formats and domain models, along with application services
+This structure follows standard .NET conventions with a focus on simplicity and maintainability. The architecture separates concerns without over-engineering:
+- **Services**: Business logic and gRPC service implementations
+- **Infrastructure**: External dependencies (S3, configuration)
+- **Models**: Simple data transfer objects
+
+## Dependencies
+
+- .NET 9.0
+- Grpc.AspNetCore 2.71.0
+- AWSSDK.S3 3.7.413
+- Ical.Net 4.3.0 (for iCalendar generation)
+- MinIO (for local S3 development)
 
 ## Development
 

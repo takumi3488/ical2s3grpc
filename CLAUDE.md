@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-This is an incomplete gRPC service that converts events to iCalendar format and saves them to S3. It follows a hybrid language approach with C# for external interfaces and I/O operations, and F# for pure functional core logic (though F# components are not yet implemented).
+This is an incomplete gRPC service that converts events to iCalendar format and saves them to S3. It is built with C# for all components.
 
 ## Build and Run Commands
 
@@ -42,8 +42,7 @@ docker compose up
 ## Architecture
 
 The project uses:
-- **C#** for gRPC services, S3 operations, and I/O
-- **F#** (planned) for pure functional core logic like event processing and iCalendar generation
+- **C#** for all components including gRPC services, S3 operations, and business logic
 - **gRPC** for service interface (currently using greet.proto but should be replaced with ical2s3.proto)
 - **MinIO** as local S3 storage in development
 

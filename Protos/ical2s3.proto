@@ -11,19 +11,52 @@ service ICalendarService {
 message EventsRequest {
   string calendar_id = 1;
   repeated Event events = 2;
+
+  // Calendar Properties from RFC 5545
+  // See: https://datatracker.ietf.org/doc/html/rfc5545#section-3.7
+  string prodid = 3; // Corresponds to the PRODID property (REQUIRED)
+  string version = 4; // Corresponds to the VERSION property (REQUIRED)
+  optional string calscale = 5; // Corresponds to the CALSCALE property
+  optional string method = 6; // Corresponds to the METHOD property
+  // Common non-standard properties
+  optional string name = 7; // Corresponds to the X-WR-CALNAME property
+  optional string description = 8; // Corresponds to the X-WR-CALDESC property
+  optional string timezone = 9; // Corresponds to the VTIMEZONE component's TZID or X-WR-TIMEZONE
 }
 
 message Event {
-  string event_id = 1;
-  string title = 2;
-  string description = 3;
-  string start_time = 4;
-  string end_time = 5;
-  string location = 6;
-  repeated string attendees = 7;
-  string organizer = 8;
-  string timezone = 9;
-  map<string, string> custom_properties = 10;
+  string uid = 1; // Corresponds to the UID property (REQUIRED)
+  string dtstamp = 2; // Corresponds to the DTSTAMP property (REQUIRED)
+  string dtstart = 3; // Corresponds to the DTSTART property (REQUIRED)
+  optional string dtend = 4; // Corresponds to the DTEND property
+  optional string summary = 5; // Corresponds to the SUMMARY property
+  optional string description = 6; // Corresponds to the DESCRIPTION property
+  optional string location = 7; // Corresponds to the LOCATION property
+  optional string organizer = 8; // Corresponds to the ORGANIZER property
+  repeated string attendee = 9; // Corresponds to the ATTENDEE property
+  optional string status = 10; // Corresponds to the STATUS property
+  optional string transp = 11; // Corresponds to the TRANSP property
+  optional int32 sequence = 12; // Corresponds to the SEQUENCE property
+  optional string created = 13; // Corresponds to the CREATED property
+  optional string last_modified = 14; // Corresponds to the LAST-MODIFIED property
+  optional string class = 15; // Corresponds to the CLASS property
+  optional int32 priority = 16; // Corresponds to the PRIORITY property
+  optional string url = 17; // Corresponds to the URL property
+  optional string rrule = 18; // Corresponds to the RRULE property
+  repeated string attach = 19; // Corresponds to the ATTACH property
+  repeated string categories = 20; // Corresponds to the CATEGORIES property
+  repeated string comment = 21; // Corresponds to the COMMENT property
+  repeated string contact = 22; // Corresponds to the CONTACT property
+  repeated string exdate = 23; // Corresponds to the EXDATE property
+  repeated string rdate = 24; // Corresponds to the RDATE property
+  optional string related_to = 25; // Corresponds to the RELATED-TO property
+  repeated string resources = 26; // Corresponds to the RESOURCES property
+  map<string, string> custom_properties = 27;
+  
+  // All-day event support
+  // When is_all_day is true, only the date part of dtstart is used (time is ignored)
+  // dtend is optional for all-day events
+  optional bool is_all_day = 28; // Indicates if this is an all-day event
 }
 
 message SaveEventsResponse {

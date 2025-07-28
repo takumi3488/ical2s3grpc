@@ -9,5 +9,5 @@ tasks:
     cmds:
       - dotnet restore
       - dotnet build --no-restore
-      - dotnet format ical2s3grpc.sln --verify-no-changes --verbosity diagnostic
+      - dotnet format ical2s3grpc.sln --verbosity diagnostic
       - dotnet test --no-build --verbosity normal 

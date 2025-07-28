@@ -4,3 +4,10 @@ tasks:
   up:
     cmds:
       - docker compose up -d --wait
+
+  ci:
+    cmds:
+      - dotnet restore
+      - dotnet build --no-restore
+      - dotnet format ical2s3grpc.sln --verify-no-changes --verbosity diagnostic
+      - dotnet test --no-build --verbosity normal 

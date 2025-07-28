@@ -14,9 +14,6 @@ dotnet run
 
 # Build the project
 dotnet build
-
-# Run with Docker Compose (includes MinIO S3)
-task up
 ```
 
 ## Architecture
@@ -44,4 +41,7 @@ The project is incomplete. Based on instruction.md, the following changes need t
 
 ## Testing
 
-Currently no tests exist. When adding tests, use `dotnet test` to run them.
+```bash
+# restore, build, format and test
+task ci
+```

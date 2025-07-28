@@ -69,22 +69,50 @@ Converts multiple event data into the iCalendar format and saves the resulting `
 | ----------------- | ------------------- | ------------------------------------------------------------------------------------------------------- |
 | `calendar_id`     | `string`            | Unique identifier for the calendar. Used as the filename for the generated `.ics` file.                |
 | `events`          | `repeated Event`    | A list of events to be converted and saved to the calendar.                                             |
+| `prodid`          | `string`            | Product identifier for the calendar (REQUIRED - corresponds to PRODID property).                        |
+| `version`         | `string`            | iCalendar version (REQUIRED - corresponds to VERSION property).                                         |
+| `calscale`        | `string` (optional) | Calendar scale (defaults to GREGORIAN).                                                                 |
+| `method`          | `string` (optional) | Calendar method (e.g., REQUEST, REPLY, CANCEL).                                                        |
+| `name`            | `string` (optional) | Calendar name (X-WR-CALNAME).                                                                           |
+| `description`     | `string` (optional) | Calendar description (X-WR-CALDESC).                                                                    |
+| `timezone`        | `string` (optional) | Default timezone for the calendar (VTIMEZONE/X-WR-TIMEZONE).                                           |
 
 ##### Event Message
 
+| Field             | Type                      | Description                                                                                             |
+| ----------------- | ------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `uid`             | `string`                  | Unique identifier for the event (REQUIRED).                                                            |
+| `dtstamp`         | `string`                  | Timestamp of when the event was created (REQUIRED).                                                    |
+| `dtstart`         | `string`                  | Start time of the event (REQUIRED).                                                                    |
+| `dtend`           | `string` (optional)       | End time of the event.                                                                                  |
+| `summary`         | `string` (optional)       | Event title/summary.                                                                                    |
+| `description`     | `string` (optional)       | Detailed event description.                                                                             |
+| `location`        | `string` (optional)       | Event location.                                                                                         |
+| `organizer`       | `string` (optional)       | Event organizer.                                                                                        |
+| `attendee`        | `repeated string`         | List of attendees.                                                                                      |
+| `status`          | `string` (optional)       | Event status (e.g., TENTATIVE, CONFIRMED, CANCELLED).                                                  |
+| `transp`          | `string` (optional)       | Time transparency (OPAQUE or TRANSPARENT).                                                             |
+| `sequence`        | `int32` (optional)        | Revision sequence number.                                                                               |
+| `created`         | `string` (optional)       | Creation timestamp.                                                                                     |
+| `last_modified`   | `string` (optional)       | Last modification timestamp.                                                                            |
+| `class`           | `string` (optional)       | Classification (PUBLIC, PRIVATE, CONFIDENTIAL).                                                         |
+| `priority`        | `int32` (optional)        | Priority level (0-9).                                                                                   |
+| `url`             | `string` (optional)       | URL associated with the event.                                                                          |
+| `rrule`           | `string` (optional)       | Recurrence rule.                                                                                        |
+| `attach`          | `repeated string`         | File attachments.                                                                                       |
+| `categories`      | `repeated string`         | Event categories.                                                                                       |
+| `comment`         | `repeated string`         | Comments.                                                                                               |
+| `contact`         | `repeated string`         | Contact information.                                                                                    |
+| `exdate`          | `repeated string`         | Exception dates for recurring events.                                                                   |
+| `rdate`           | `repeated string`         | Recurrence dates.                                                                                       |
+| `related_to`      | `string` (optional)       | Related event UID.                                                                                      |
+| `resources`       | `repeated string`         | Resources needed for the event.                                                                         |
+| `custom_properties` | `map<string, string>`   | Custom key-value pairs.                                                                                 |
+| `is_all_day`      | `bool` (optional)         | Indicates if this is an all-day event.                                                                 |
+
+#### Response: `SaveEventsResponse`
+
 | Field             | Type                | Description                                                                                             |
 | ----------------- | ------------------- | ------------------------------------------------------------------------------------------------------- |
-| `event_id`        | `string`            | Unique identifier for the event.                                                                        |
-| `title`           | `string`            | The title or summary of the event.                                                                      |
-| `description`     | `string`            | A more detailed description of the event.                                                               |
-| `start_time`      | `string`            | The start time of the event in ISO 8601 format (e.g., `2023-10-27T10:00:00Z`).                             |
-| `end_time`        | `string`            | The end time of the event in ISO 8601 format.                                                           |
-| `location`        | `string`            | The location where the event will take place.                                                           |
-| `attendees`       | `repeated string`   | A list of attendee email addresses.                                                                     |
-| `organizer`       | `string`            | The email address of the event organizer.                                                               |
-| `timezone`        | `string`            | The timezone for the event (e.g., `America/New_York`).                                                  |
-| `custom_properties` | `map<string, string>` | A map of custom key-value pairs to be included in the iCalendar file.                                   |
-
-#### Response: Status Code Only
-
-The `SaveEvents` method returns only a gRPC status code indicating success or failure of the operation.
+| `success`         | `bool`              | Indicates whether the operation was successful.                                                         |
+| `error_message`   | `string`            | Error message if the operation failed.

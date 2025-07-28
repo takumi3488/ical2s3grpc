@@ -1,9 +1,19 @@
 version: "3"
 
 tasks:
-  up:
+  dev:
+    env:
+      S3_ACCESS_KEY: minio
+      S3_SECRET_KEY: minio123
+      S3_SERVICE_URL: http://localhost:9000
+      S3_BUCKET_NAME: ical2s3grpc
+      S3_REGION: us-east-1
+      S3_USE_HTTPS: false
+      S3_FORCE_PATH_STYLE: true
     cmds:
-      - docker compose up -d --wait
+      - docker compose up -d --wait s3
+      - docker compose up s3-init
+      - dotnet run
 
   ci:
     cmds:

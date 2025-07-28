@@ -11,6 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="AWSSDK.S3" Version="3.7.413" />
     <PackageReference Include="Grpc.AspNetCore" Version="2.71.0" />
     <PackageReference Include="Grpc.Tools" Version="2.71.0">
       <PrivateAssets>all</PrivateAssets>

@@ -32,11 +32,9 @@ ical2s3grpc/
 │   │   │   ├── EmailAddress.fs    # Email address validation
 │   │   │   ├── TimeZone.fs        # Timezone wrapper
 │   │   │   └── DateTimeRange.fs   # Event time range
-│   │   ├── Entities/              # Domain entities
-│   │   │   ├── Event.fs           # Event domain models
-│   │   │   └── Calendar.fs        # Calendar domain models
-│   │   └── Aggregates/            # Domain aggregates
-│   │       └── EventCollection.fs # Event collection aggregate
+│   │   └── Entities/              # Domain entities
+│   │       ├── Event.fs           # Event domain models
+│   │       └── Calendar.fs        # Calendar domain models
 │   ├── Services/
 │   │   ├── EventProcessor.fs      # Event processing logic
 │   │   └── ICalendarGenerator.fs  # iCalendar format generation
@@ -50,7 +48,7 @@ ical2s3grpc/
 └── ical2s3grpc.sln
 ```
 
-This structure follows .NET conventions while maintaining clear separation between imperative I/O operations (C#) and pure functional business logic (F#). The domain layer is organized with value objects for type safety, entities for core business objects, and aggregates for maintaining consistency boundaries.
+This structure follows .NET conventions while maintaining clear separation between imperative I/O operations (C#) and pure functional business logic (F#). The domain layer is organized with value objects for type safety and entities for core business objects.
 
 ## Development
 

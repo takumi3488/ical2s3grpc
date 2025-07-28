@@ -9,6 +9,10 @@ runs:
       with:
         dotnet-version: '9.0.x'
     
+    - name: Install Fantomas
+      run: dotnet tool install -g fantomas
+      shell: bash
+    
     - name: Restore dependencies
       run: dotnet restore
       shell: bash
@@ -17,8 +21,12 @@ runs:
       run: dotnet build --no-restore
       shell: bash
 
-    - name: Check format
-      run: dotnet format ical2s3grpc.sln --verify-no-changes --verbosity diagnostic
+    - name: Check C# format
+      run: dotnet format ical2s3grpc.csproj --verify-no-changes --verbosity diagnostic
+      shell: bash
+    
+    - name: Check F# format
+      run: fantomas Core --check
       shell: bash
     
     - name: Test

@@ -15,9 +15,14 @@ tasks:
       - docker compose up s3-init
       - dotnet run
 
+  format:
+    cmds:
+      - dotnet format ical2s3grpc.csproj --verbosity diagnostic
+      - fantomas Core
+
   ci:
     cmds:
       - dotnet restore
       - dotnet build --no-restore
-      - dotnet format ical2s3grpc.sln --verbosity diagnostic
+      - task: format
       - dotnet test --no-build --verbosity normal 

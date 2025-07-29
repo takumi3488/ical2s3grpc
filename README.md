@@ -4,6 +4,61 @@
 
 This project is currently under development and is not yet complete. 
 
+## Configuration
+
+### Environment Variables
+
+The application can be configured using the following environment variables:
+
+#### S3 Configuration (Required)
+| Variable | Description | Default | Example |
+|----------|-------------|---------|---------|
+| `S3_ACCESS_KEY` | S3 access key | - | `your-access-key` |
+| `S3_SECRET_KEY` | S3 secret key | - | `your-secret-key` |
+| `S3_BUCKET_NAME` | S3 bucket name | - | `ical2s3grpc` |
+
+#### S3 Configuration (Optional)
+| Variable | Description | Default | Example |
+|----------|-------------|---------|---------|
+| `S3_SERVICE_URL` | S3 service endpoint URL | Empty (AWS S3 auto-detected) | `http://localhost:9000` |
+| `S3_REGION` | AWS region | `us-east-1` | `us-west-2` |
+| `S3_USE_HTTPS` | Use HTTPS for S3 connections | `true` | `false` |
+| `S3_FORCE_PATH_STYLE` | Force path-style addressing | `false` | `true` |
+
+#### OpenTelemetry Configuration (Optional)
+| Variable | Description | Default | Example |
+|----------|-------------|---------|---------|
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | OTLP endpoint for tracing | Empty | `http://localhost:4317` |
+| `OTEL_SERVICE_NAME` | Service name for tracing | `ical2s3grpc` | `my-service` |
+
+### Configuration Examples
+
+#### AWS S3 Configuration
+```bash
+export S3_ACCESS_KEY="your-aws-access-key"
+export S3_SECRET_KEY="your-aws-secret-key"
+export S3_BUCKET_NAME="my-ical-bucket"
+export S3_REGION="us-west-2"
+```
+
+#### MinIO Configuration
+```bash
+export S3_ACCESS_KEY="admin"
+export S3_SECRET_KEY="minio123"
+export S3_SERVICE_URL="http://localhost:9000"
+export S3_BUCKET_NAME="ical2s3grpc"
+export S3_REGION="us-east-1"
+export S3_USE_HTTPS="false"
+export S3_FORCE_PATH_STYLE="true"
+```
+
+#### With Distributed Tracing (Jaeger)
+```bash
+# Add to either AWS or MinIO configuration
+export OTEL_EXPORTER_OTLP_ENDPOINT="http://localhost:4317"
+export OTEL_SERVICE_NAME="ical2s3grpc"
+```
+
 ## Architecture
 
 The project uses a simple, pragmatic C# architecture:
@@ -136,9 +191,8 @@ Converts multiple event data into the iCalendar format and saves the resulting `
 | `custom_properties` | `map<string, string>`   | Custom key-value pairs.                                                                                 |
 | `is_all_day`      | `bool` (optional)         | Indicates if this is an all-day event.                                                                 |
 
-#### Response: `SaveEventsResponse`
+#### Response
 
-| Field             | Type                | Description                                                                                             |
-| ----------------- | ------------------- | ------------------------------------------------------------------------------------------------------- |
-| `success`         | `bool`              | Indicates whether the operation was successful.                                                         |
-| `error_message`   | `string`            | Error message if the operation failed.
+The method returns `google.protobuf.Empty` on success. Errors are communicated through standard gRPC status codes:
+- `OK` (0): Successfully saved the calendar to S3
+- `INTERNAL` (13): Failed to save to storage or other internal errors

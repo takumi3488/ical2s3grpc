@@ -3,37 +3,49 @@ services:
     build: .
     ports:
       - 8080:8080
+      - 8081:8081
     environment:
-      - S3_ACCESS_KEY=minio
+      - S3_ACCESS_KEY=admin
       - S3_SECRET_KEY=minio123
       - S3_SERVICE_URL=http://s3:9000
       - S3_BUCKET_NAME=ical2s3grpc
       - S3_REGION=us-east-1
       - S3_USE_HTTPS=false
       - S3_FORCE_PATH_STYLE=true
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+      - OTEL_SERVICE_NAME=ical2s3grpc
     depends_on:
       s3:
         condition: service_healthy
       s3-init:
         condition: service_completed_successfully
+      jaeger:
+        condition: service_healthy
+  
+  app-healthcheck:
+    image: curlimages/curl:latest
+    command: ["sleep", "infinity"]
+    depends_on:
+      app:
+        condition: service_started
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health/ready"]
-      interval: 10s
+      test: ["CMD", "curl", "-f", "http://app:8081/health/ready"]
+      interval: 5s
       timeout: 5s
       retries: 5
       start_period: 5s
-  
+
   s3:
     image: quay.io/minio/minio:latest
     environment:
-      - MINIO_ROOT_USER=minio
+      - MINIO_ROOT_USER=admin
       - MINIO_ROOT_PASSWORD=minio123
     ports:
       - 9000:9000
       - 9001:9001
     healthcheck:
       test: ["CMD", "mc", "ready", "local"]
-      interval: 10s
+      interval: 5s
       timeout: 5s
       retries: 5
       start_period: 5s
@@ -47,8 +59,24 @@ services:
     image: quay.io/minio/mc:latest
     entrypoint:
       - /bin/sh
+    command:
       - -c
-      - mc alias set minio http://s3:9000 minio minio123 && mc mb minio/ical2s3grpc || true
+      - mc alias set minio http://s3:9000 admin minio123 && mc mb minio/ical2s3grpc || true
     depends_on:
       s3:
         condition: service_healthy
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686"  # Jaeger UI
+      - "4317:4317"    # OTLP gRPC receiver
+      - "4318:4318"    # OTLP HTTP receiver
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:14269/"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s

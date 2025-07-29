@@ -1,11 +1,13 @@
 syntax = "proto3";
 
+import "google/protobuf/empty.proto";
+
 option csharp_namespace = "ical2s3grpc";
 
 package ical2s3;
 
 service ICalendarService {
-  rpc SaveEvents (EventsRequest) returns (SaveEventsResponse);
+  rpc SaveEvents (EventsRequest) returns (google.protobuf.Empty);
 }
 
 message EventsRequest {
@@ -57,9 +59,4 @@ message Event {
   // When is_all_day is true, only the date part of dtstart is used (time is ignored)
   // dtend is optional for all-day events
   optional bool is_all_day = 28; // Indicates if this is an all-day event
-}
-
-message SaveEventsResponse {
-  bool success = 1;
-  string error_message = 2;
 }

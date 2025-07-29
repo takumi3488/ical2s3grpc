@@ -3,8 +3,28 @@ using ical2s3grpc.Infrastructure.Configuration;
 using ical2s3grpc.Infrastructure.Storage;
 using ical2s3grpc.Services;
 using Microsoft.Extensions.Options;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
+using OpenTelemetry.Exporter;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure Kestrel for gRPC
+builder.WebHost.ConfigureKestrel(options =>
+{
+    // This endpoint will use HTTP/2 for gRPC
+    options.ListenAnyIP(8080, listenOptions =>
+    {
+        listenOptions.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http2;
+    });
+
+    // Add a separate endpoint for HTTP/1.x health checks
+    options.ListenAnyIP(8081, listenOptions =>
+    {
+        listenOptions.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http1;
+    });
+});
 
 // Add configuration - S3 settings from environment variables only
 builder.Services.Configure<S3Options>(options =>
@@ -14,12 +34,72 @@ builder.Services.Configure<S3Options>(options =>
     options.ServiceUrl = builder.Configuration["S3_SERVICE_URL"] ?? string.Empty; // Empty for AWS S3, required for MinIO/custom endpoints
     options.BucketName = builder.Configuration["S3_BUCKET_NAME"] ?? throw new InvalidOperationException("S3_BUCKET_NAME environment variable is required");
     options.Region = builder.Configuration["S3_REGION"] ?? "us-east-1";
-    options.UseHttps = bool.Parse(builder.Configuration["S3_USE_HTTPS"] ?? "true");
-    options.ForcePathStyle = bool.Parse(builder.Configuration["S3_FORCE_PATH_STYLE"] ?? "false");
+
+    // Validate boolean configurations
+    if (!bool.TryParse(builder.Configuration["S3_USE_HTTPS"] ?? "true", out var useHttps))
+    {
+        throw new InvalidOperationException("S3_USE_HTTPS must be 'true' or 'false'");
+    }
+    options.UseHttps = useHttps;
+
+    if (!bool.TryParse(builder.Configuration["S3_FORCE_PATH_STYLE"] ?? "false", out var forcePathStyle))
+    {
+        throw new InvalidOperationException("S3_FORCE_PATH_STYLE must be 'true' or 'false'");
+    }
+    options.ForcePathStyle = forcePathStyle;
+
+    // Validate bucket name format
+    if (string.IsNullOrWhiteSpace(options.BucketName) ||
+        options.BucketName.Length < 3 ||
+        options.BucketName.Length > 63)
+    {
+        throw new InvalidOperationException("S3_BUCKET_NAME must be between 3 and 63 characters");
+    }
 });
 
 // Add services to the container.
 builder.Services.AddGrpc();
+builder.Services.AddGrpcReflection();
+
+// Configure OpenTelemetry
+builder.Services.AddOpenTelemetry()
+    .WithTracing(tracing =>
+    {
+        tracing
+            .AddAspNetCoreInstrumentation(options =>
+            {
+                options.Filter = (httpContext) =>
+                {
+                    // Exclude health check endpoints from tracing
+                    return !httpContext.Request.Path.StartsWithSegments("/health");
+                };
+            })
+            .AddHttpClientInstrumentation()
+            .AddGrpcClientInstrumentation();
+
+        // Use OTLP exporter for traces
+        tracing.AddOtlpExporter(options =>
+        {
+            options.Protocol = OtlpExportProtocol.Grpc;
+        });
+    })
+    .WithMetrics(metrics =>
+    {
+        metrics
+            .AddAspNetCoreInstrumentation()
+            .AddHttpClientInstrumentation()
+            .AddRuntimeInstrumentation()
+            .AddProcessInstrumentation();
+
+        // Use OTLP exporter for metrics
+        metrics.AddOtlpExporter(options =>
+        {
+            options.Protocol = OtlpExportProtocol.Grpc;
+        });
+    });
+
+// Add application services
+builder.Services.AddScoped<ICalendarGenerator, CalendarGenerator>();
 
 // Add storage services
 if (builder.Environment.IsDevelopment())
@@ -49,7 +129,7 @@ else
         IAmazonS3 client = new AmazonS3Client(s3Options.AccessKey, s3Options.SecretKey, config);
         return client;
     });
-    builder.Services.AddScoped<IStorageService, S3StorageService>();
+    builder.Services.AddScoped<IStorageService, RetryableS3StorageService>();
 }
 
 var app = builder.Build();
@@ -84,6 +164,26 @@ if (!app.Environment.IsDevelopment())
 
 // Configure the HTTP request pipeline.
 app.MapGrpcService<ICalendarServiceImpl>();
+app.MapGrpcReflectionService();
+
+// Map health endpoint only to HTTP/1.x port
+app.MapWhen(context => context.Connection.LocalPort == 8081,
+    builder =>
+    {
+        builder.Use(async (context, next) =>
+        {
+            if (context.Request.Path == "/health/ready")
+            {
+                context.Response.StatusCode = 200;
+                await context.Response.WriteAsync("OK");
+            }
+            else
+            {
+                await next();
+            }
+        });
+    });
+
 app.MapGet("/", () => "Communication with gRPC endpoints must be made through a gRPC client. To learn how to create a client, visit: https://go.microsoft.com/fwlink/?linkid=2086909");
 
 app.Run();

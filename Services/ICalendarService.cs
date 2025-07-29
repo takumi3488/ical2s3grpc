@@ -1,236 +1,92 @@
-using System.Text;
+using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
-using Ical.Net;
-using Ical.Net.CalendarComponents;
-using Ical.Net.DataTypes;
-using Ical.Net.Serialization;
+using ical2s3grpc.Infrastructure.Storage;
+using ical2s3grpc.Models;
+using System.Diagnostics;
 
 namespace ical2s3grpc.Services;
 
 public class ICalendarServiceImpl : ICalendarService.ICalendarServiceBase
 {
     private readonly ILogger<ICalendarServiceImpl> _logger;
+    private readonly ICalendarGenerator _calendarGenerator;
+    private readonly IStorageService _storageService;
+    private static readonly ActivitySource ActivitySource = new("ical2s3grpc");
 
-    public ICalendarServiceImpl(ILogger<ICalendarServiceImpl> logger)
+    public ICalendarServiceImpl(
+        ILogger<ICalendarServiceImpl> logger,
+        ICalendarGenerator calendarGenerator,
+        IStorageService storageService)
     {
         _logger = logger;
+        _calendarGenerator = calendarGenerator;
+        _storageService = storageService;
     }
 
-    public override Task<SaveEventsResponse> SaveEvents(EventsRequest request, ServerCallContext context)
+    public override async Task<Empty> SaveEvents(EventsRequest request, ServerCallContext context)
     {
+        using var activity = ActivitySource.StartActivity("SaveEvents");
+        activity?.SetTag("calendar.id", request.CalendarId);
+        activity?.SetTag("events.count", request.Events.Count);
+
         _logger.LogInformation("SaveEvents called for calendar_id: {CalendarId} with {EventCount} events",
             request.CalendarId, request.Events.Count);
 
         try
         {
-            var calendar = new Calendar();
-
-            // Set calendar-level properties from the request
-            if (!string.IsNullOrEmpty(request.Prodid))
+            // Map request to DTO
+            CalendarDto calendarDto;
+            using (var mapActivity = ActivitySource.StartActivity("MapEventRequest"))
             {
-                calendar.ProductId = request.Prodid;
-            }
-            if (!string.IsNullOrEmpty(request.Version))
-            {
-                calendar.Version = request.Version;
-            }
-            if (!string.IsNullOrEmpty(request.Calscale))
-            {
-                calendar.Scale = request.Calscale;
-            }
-            if (!string.IsNullOrEmpty(request.Method))
-            {
-                calendar.Method = request.Method;
-            }
-            if (!string.IsNullOrEmpty(request.Name))
-            {
-                calendar.AddProperty("X-WR-CALNAME", request.Name);
-            }
-            if (!string.IsNullOrEmpty(request.Description))
-            {
-                calendar.AddProperty("X-WR-CALDESC", request.Description);
-            }
-            if (!string.IsNullOrEmpty(request.Timezone))
-            {
-                // Add both X-WR-TIMEZONE property and VTIMEZONE component for full compatibility
-                calendar.AddProperty("X-WR-TIMEZONE", request.Timezone);
-
-                // Create a proper VTIMEZONE component
-                var timezone = new VTimeZone(request.Timezone);
-                calendar.TimeZones.Add(timezone);
+                calendarDto = EventMapper.MapToCalendarDto(request);
             }
 
-            foreach (var e in request.Events)
+            // Generate iCalendar content
+            string icalContent;
+            using (var generateActivity = ActivitySource.StartActivity("GenerateICalendar"))
             {
-                var calendarEvent = new CalendarEvent
-                {
-                    Uid = e.Uid,
-                    DtStamp = new CalDateTime(DateTime.Parse(e.Dtstamp))
-                };
-
-                // Handle all-day events
-                if (e.IsAllDay)
-                {
-                    // For all-day events, parse as date only (no time component)
-                    var startDate = DateTime.Parse(e.Dtstart).Date;
-                    // Use constructor overload that creates a date-only value
-                    calendarEvent.DtStart = new CalDateTime(startDate.Year, startDate.Month, startDate.Day);
-
-                    // Handle optional DTEND for all-day events
-                    if (!string.IsNullOrEmpty(e.Dtend))
-                    {
-                        var endDate = DateTime.Parse(e.Dtend).Date;
-                        calendarEvent.DtEnd = new CalDateTime(endDate.Year, endDate.Month, endDate.Day);
-                    }
-                }
-                else
-                {
-                    // Set required DTSTART with timezone if specified
-                    if (!string.IsNullOrEmpty(request.Timezone))
-                    {
-                        calendarEvent.DtStart = new CalDateTime(DateTime.Parse(e.Dtstart), request.Timezone);
-                    }
-                    else
-                    {
-                        calendarEvent.DtStart = new CalDateTime(DateTime.Parse(e.Dtstart));
-                    }
-
-                    // Handle optional DTEND
-                    if (!string.IsNullOrEmpty(e.Dtend))
-                    {
-                        if (!string.IsNullOrEmpty(request.Timezone))
-                        {
-                            calendarEvent.DtEnd = new CalDateTime(DateTime.Parse(e.Dtend), request.Timezone);
-                        }
-                        else
-                        {
-                            calendarEvent.DtEnd = new CalDateTime(DateTime.Parse(e.Dtend));
-                        }
-                    }
-                }
-
-                // Set optional string properties
-                if (!string.IsNullOrEmpty(e.Summary)) calendarEvent.Summary = e.Summary;
-                if (!string.IsNullOrEmpty(e.Description)) calendarEvent.Description = e.Description;
-                if (!string.IsNullOrEmpty(e.Location)) calendarEvent.Location = e.Location;
-                if (!string.IsNullOrEmpty(e.Status)) calendarEvent.Status = e.Status;
-                if (!string.IsNullOrEmpty(e.Class)) calendarEvent.Class = e.Class;
-                if (!string.IsNullOrEmpty(e.Transp)) calendarEvent.Transparency = e.Transp;
-
-                // Set optional organizer
-                if (!string.IsNullOrEmpty(e.Organizer))
-                {
-                    calendarEvent.Organizer = new Organizer { CommonName = e.Organizer };
-                }
-
-                // Set optional integer properties
-                if (e.HasPriority) calendarEvent.Priority = e.Priority;
-                if (e.HasSequence) calendarEvent.Sequence = e.Sequence;
-
-                // Set optional URL
-                if (!string.IsNullOrEmpty(e.Url))
-                {
-                    calendarEvent.Url = new Uri(e.Url);
-                }
-
-                // Set optional date properties
-                if (!string.IsNullOrEmpty(e.Created))
-                {
-                    calendarEvent.Created = new CalDateTime(DateTime.Parse(e.Created));
-                }
-                if (!string.IsNullOrEmpty(e.LastModified))
-                {
-                    calendarEvent.LastModified = new CalDateTime(DateTime.Parse(e.LastModified));
-                }
-
-                // Set related-to property
-                if (!string.IsNullOrEmpty(e.RelatedTo))
-                {
-                    calendarEvent.AddProperty("RELATED-TO", e.RelatedTo);
-                }
-                // Handle recurrence rule
-                if (!string.IsNullOrEmpty(e.Rrule))
-                {
-                    calendarEvent.RecurrenceRules.Add(new RecurrencePattern(e.Rrule));
-                }
-
-                // Handle attendees
-                foreach (var attendee in e.Attendee)
-                {
-                    calendarEvent.Attendees.Add(new Attendee { CommonName = attendee });
-                }
-
-                // Handle categories
-                foreach (var category in e.Categories)
-                {
-                    calendarEvent.Categories.Add(category);
-                }
-
-                // Handle comments
-                foreach (var comment in e.Comment)
-                {
-                    calendarEvent.AddProperty("COMMENT", comment);
-                }
-
-                // Handle contacts
-                foreach (var contact in e.Contact)
-                {
-                    calendarEvent.AddProperty("CONTACT", contact);
-                }
-
-                // Handle attachments
-                foreach (var attach in e.Attach)
-                {
-                    calendarEvent.AddProperty("ATTACH", attach);
-                }
-
-                // Handle exception dates
-                foreach (var exdate in e.Exdate)
-                {
-                    calendarEvent.AddProperty("EXDATE", exdate);
-                }
-
-                // Handle recurrence dates
-                foreach (var rdate in e.Rdate)
-                {
-                    calendarEvent.AddProperty("RDATE", rdate);
-                }
-
-                // Handle resources
-                foreach (var resource in e.Resources)
-                {
-                    calendarEvent.Resources.Add(resource);
-                }
-
-                // Handle custom properties
-                foreach (var kvp in e.CustomProperties)
-                {
-                    calendarEvent.AddProperty(kvp.Key, kvp.Value);
-                }
-                calendar.Events.Add(calendarEvent);
+                icalContent = _calendarGenerator.GenerateICalendar(calendarDto);
+                generateActivity?.SetTag("ical.content.length", icalContent.Length);
             }
 
-            var serializer = new CalendarSerializer();
-            var icalString = serializer.SerializeToString(calendar);
+            _logger.LogDebug("Generated iCalendar data for calendar_id: {CalendarId}", request.CalendarId);
 
-            _logger.LogInformation("Generated iCalendar data:\n{ICalendarData}", icalString);
-
-            // TODO: Implement S3 upload
-            // For now, return success
-            return Task.FromResult(new SaveEventsResponse
+            // Save to S3 with filename {calendar_id}.ics
+            var fileName = $"{request.CalendarId}.ics";
+            bool success;
+            using (var saveActivity = ActivitySource.StartActivity("SaveToStorage"))
             {
-                Success = true,
-                ErrorMessage = ""
-            });
+                saveActivity?.SetTag("storage.filename", fileName);
+                success = await _storageService.SaveFileAsync(fileName, icalContent, context.CancellationToken);
+                saveActivity?.SetTag("storage.success", success);
+            }
+
+            if (success)
+            {
+                _logger.LogInformation("Successfully saved calendar {CalendarId} to storage as {FileName}",
+                    request.CalendarId, fileName);
+
+                activity?.SetStatus(ActivityStatusCode.Ok);
+                return new Empty();
+            }
+            else
+            {
+                _logger.LogError("Failed to save calendar {CalendarId} to storage", request.CalendarId);
+                activity?.SetStatus(ActivityStatusCode.Error, "Failed to save calendar to storage");
+                throw new RpcException(new Status(StatusCode.Internal, "Failed to save calendar to storage"));
+            }
+        }
+        catch (RpcException)
+        {
+            activity?.SetStatus(ActivityStatusCode.Error);
+            // Re-throw RpcException as is
+            throw;
         }
         catch (Exception ex)
         {
+            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
             _logger.LogError(ex, "Error saving events for calendar {CalendarId}", request.CalendarId);
-            return Task.FromResult(new SaveEventsResponse
-            {
-                Success = false,
-                ErrorMessage = ex.Message
-            });
+            throw new RpcException(new Status(StatusCode.Internal, ex.Message));
         }
     }
 }

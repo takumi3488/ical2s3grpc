@@ -1,6 +1,6 @@
 {
   extends: [
-    "config:base"
+    "config:best-practices"
   ],
   dependencyDashboard: false,
   packageRules: [
@@ -11,6 +11,7 @@
       ],
       groupName: "all minor and patch updates",
       groupSlug: "all-minor-and-patch-updates",
+      addLabels: ["automerge"]
     }
   ]
 }

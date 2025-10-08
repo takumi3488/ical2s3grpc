@@ -11,6 +11,7 @@ using OpenTelemetry.Exporter;
 var builder = WebApplication.CreateBuilder(args);
 
 // Configure Kestrel for gRPC
+builder.WebHost.UseUrls(); // Clear default URLs to avoid conflicts
 builder.WebHost.ConfigureKestrel(options =>
 {
     // This endpoint will use HTTP/2 for gRPC

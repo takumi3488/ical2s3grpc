@@ -20,7 +20,6 @@ RUN dotnet publish -c Release -o /app --no-restore
 # Runtime stage
 FROM mcr.microsoft.com/dotnet/aspnet:9.0
 WORKDIR /app
-ENV ASPNETCORE_URLS=""
 COPY --from=build /app .
 
 ENTRYPOINT ["dotnet", "ical2s3grpc.dll"]

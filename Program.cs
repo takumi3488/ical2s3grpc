@@ -10,22 +10,7 @@ using OpenTelemetry.Exporter;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure Kestrel for gRPC
-builder.WebHost.PreferHostingUrls(false); // Prefer Kestrel configuration over default URLs
-builder.WebHost.ConfigureKestrel(options =>
-{
-    // This endpoint will use HTTP/2 for gRPC
-    options.ListenAnyIP(8080, listenOptions =>
-    {
-        listenOptions.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http2;
-    });
-
-    // Add a separate endpoint for HTTP/1.x health checks
-    options.ListenAnyIP(8081, listenOptions =>
-    {
-        listenOptions.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http1;
-    });
-});
+// Kestrel endpoints are configured in appsettings.json
 
 // Add configuration - S3 settings from environment variables only
 builder.Services.Configure<S3Options>(options =>

@@ -100,7 +100,7 @@ This structure follows standard .NET conventions with a focus on simplicity and 
 
 ## Dependencies
 
-- .NET 9.0
+- .NET 10.0
 - Grpc.AspNetCore 2.71.0
 - AWSSDK.S3 3.7.413
 - Ical.Net 4.3.0 (for iCalendar generation)

@@ -37,6 +37,7 @@ tasks:
       - docker compose up --build -d --wait app
       - docker compose up -d --wait app-healthcheck
       - echo "Services started. Testing gRPC service..."
+      - mc alias set local http://localhost:9000 admin minio123
       - echo "Available gRPC methods:"
       - grpcurl -plaintext localhost:8080 list
       - echo "Testing ICalendarService:"

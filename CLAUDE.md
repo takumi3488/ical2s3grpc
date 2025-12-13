@@ -95,7 +95,7 @@ The project is incomplete. Based on instruction.md, the following changes need t
 
 ## Dependencies
 
-- .NET 9.0
+- .NET 10.0
 - Grpc.AspNetCore 2.71.0
 - MinIO (for local S3 development)
 - OpenTelemetry packages for instrumentation and export

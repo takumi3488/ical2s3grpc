@@ -1,5 +1,5 @@
 # Build stage
-FROM --platform=linux/amd64 mcr.microsoft.com/dotnet/sdk:10.0@sha256:e362a8dbcd691522456da26a5198b8f3ca1d7641c95624fadc5e3e82678bd08a AS build
+FROM --platform=linux/amd64 mcr.microsoft.com/dotnet/sdk:10.0@sha256:ea13841f10c6c410a6df63c6c97ab549dfd2b5fcfff1c00186531ba30208117d AS build
 WORKDIR /source
 
 # Copy csproj and restore dependencies
@@ -18,7 +18,7 @@ COPY appsettings*.json ./
 RUN dotnet publish -c Release -o /app --no-restore
 
 # Runtime stage
-FROM mcr.microsoft.com/dotnet/aspnet:10.0@sha256:aec87aa74ddf129da573fa69f42f229a23c953a1c6fdecedea1aa6b1fe147d76
+FROM mcr.microsoft.com/dotnet/aspnet:10.0@sha256:8b75cdf59a5068d9adfd8a6d202cc7671b2dc8f5f46c51e3b88a0a632e8fad1f
 WORKDIR /app
 COPY --from=build /app .
 

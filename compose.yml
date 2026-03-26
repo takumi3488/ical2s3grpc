@@ -23,7 +23,7 @@ services:
         condition: service_healthy
   
   app-healthcheck:
-    image: curlimages/curl:latest
+    image: curlimages/curl:latest@sha256:d94d07ba9e7d6de898b6d96c1a072f6f8266c687af78a74f380087a0addf5d17
     command: ["sleep", "infinity"]
     depends_on:
       app:
@@ -36,7 +36,7 @@ services:
       start_period: 5s
 
   s3:
-    image: quay.io/minio/minio:latest
+    image: quay.io/minio/minio:latest@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e
     environment:
       - MINIO_ROOT_USER=admin
       - MINIO_ROOT_PASSWORD=minio123
@@ -56,7 +56,7 @@ services:
       - ":9001"
 
   s3-init:
-    image: quay.io/minio/mc:latest
+    image: quay.io/minio/mc:latest@sha256:a7fe349ef4bd8521fb8497f55c6042871b2ae640607cf99d9bede5e9bdf11727
     entrypoint:
       - /bin/sh
     command:
@@ -67,7 +67,7 @@ services:
         condition: service_healthy
 
   jaeger:
-    image: jaegertracing/all-in-one:latest
+    image: jaegertracing/all-in-one:latest@sha256:ab6f1a1f0fb49ea08bcd19f6b84f6081d0d44b364b6de148e1798eb5816bacac
     ports:
       - "16686:16686"  # Jaeger UI
       - "4317:4317"    # OTLP gRPC receiver

@@ -13,7 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="AWSSDK.S3" Version="4.0.104" />
+    <PackageReference Include="AWSSDK.S3" Version="4.0.104.1" />
     <PackageReference Include="Grpc.AspNetCore" Version="2.84.0" />
     <PackageReference Include="Grpc.AspNetCore.Server.Reflection" Version="2.84.0" />
     <PackageReference Include="Grpc.Tools" Version="2.84.0">
